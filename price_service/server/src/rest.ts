@@ -164,6 +164,44 @@ export class RestAPI {
       "api/latest_vaas?ids[]=<price_feed_id>&ids[]=<price_feed_id_2>&.."
     );
 
+    app.get(
+      "/api/latest_vaas_ts",
+      validate(latestVaasInputSchema),
+      (req: Request, res: Response) => {
+        const priceIds = (req.query.ids as string[]).map(removeLeading0x);
+
+        // Multiple price ids might share same vaa, we use sequence number as
+        // key of a vaa and deduplicate using a map of seqnum to vaa bytes.
+        const vaaMap = new Map<number, [Buffer, number]>();
+
+        const notFoundIds: string[] = [];
+
+        for (const id of priceIds) {
+          const latestPriceInfo = this.priceFeedVaaInfo.getLatestPriceInfo(id);
+
+          if (latestPriceInfo === undefined) {
+            notFoundIds.push(id);
+            continue;
+          }
+
+          vaaMap.set(latestPriceInfo.seqNum, [latestPriceInfo.vaa, latestPriceInfo.publishTime]);
+        }
+
+        if (notFoundIds.length > 0) {
+          throw RestException.PriceFeedIdNotFound(notFoundIds);
+        }
+
+        const jsonResponse = Array.from(vaaMap.values(), (vaa) =>
+          [vaa[0].toString("base64"), vaa[1]]
+        );
+
+        res.json(jsonResponse);
+      }
+    );
+    endpoints.push(
+      "api/latest_vaas_ts?ids[]=<price_feed_id>&ids[]=<price_feed_id_2>&.."
+    );
+
     const getVaaInputSchema: schema = {
       query: Joi.object({
         id: Joi.string()
