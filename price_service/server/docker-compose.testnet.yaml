@@ -16,9 +16,9 @@ services:
       - "warn"
   price-service:
     # Find latest price service images https://gallery.ecr.aws/pyth-network/xc-server
-    image: public.ecr.aws/pyth-network/xc-server:v3.0.0
+    # image: public.ecr.aws/pyth-network/xc-server:v3.0.0
     # Or alternatively use a locally built image
-    # image: pyth_price_server
+    image: pyth_price_server
     environment:
       SPY_SERVICE_HOST: "spy:7072"
       SPY_SERVICE_FILTERS: |
