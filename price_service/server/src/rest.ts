@@ -165,7 +165,7 @@ export class RestAPI {
     );
 
     app.get(
-      "/api/latest_vaas_ts",
+      "/api/latest_vaas_px",
       validate(latestVaasInputSchema),
       (req: Request, res: Response) => {
         const priceIds = (req.query.ids as string[]).map(removeLeading0x);
@@ -199,7 +199,7 @@ export class RestAPI {
       }
     );
     endpoints.push(
-      "api/latest_vaas_ts?ids[]=<price_feed_id>&ids[]=<price_feed_id_2>&.."
+      "api/latest_vaas_px?ids[]=<price_feed_id>&ids[]=<price_feed_id_2>&.."
     );
 
     const getVaaInputSchema: schema = {
