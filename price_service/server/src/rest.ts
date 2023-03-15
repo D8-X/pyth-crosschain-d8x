@@ -170,9 +170,9 @@ export class RestAPI {
       (req: Request, res: Response) => {
         const priceIds = (req.query.ids as string[]).map(removeLeading0x);
 
-        // Multiple price ids might share same vaa, we use sequence number as
-        // key of a vaa and deduplicate using a map of seqnum to vaa bytes.
-        const vaaMap = new Map<number, [Buffer, number]>();
+        // Multiple price ids might share same vaa, however we also deliver the
+        // price, hence the key is the priceID
+        const vaaMap = new Map<string, [Buffer, string]>();
 
         const notFoundIds: string[] = [];
 
@@ -183,8 +183,8 @@ export class RestAPI {
             notFoundIds.push(id);
             continue;
           }
-
-          vaaMap.set(latestPriceInfo.seqNum, [latestPriceInfo.vaa, latestPriceInfo.publishTime]);
+          let priceFeedStr = latestPriceInfo.priceFeed.toJson()["price"];
+          vaaMap.set(id, [latestPriceInfo.vaa, priceFeedStr]);
         }
 
         if (notFoundIds.length > 0) {
