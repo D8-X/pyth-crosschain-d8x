@@ -54,7 +54,7 @@ This is the deployment process:
    values in [`.env.prod.development`](.env.prod.development).
 3. If you have changed the contract make sure that:
    - The change is not breaking the storage.
-   - If it is making a backward incomptabile change, the legacy methods/storages are still used. For example,
+   - If it is making a backward incompatible change, the legacy methods/storages are still used. For example,
      if the PriceInfos are now stored in a separate storage slot, the old PriceInfo should be accessible when
      the new one is not populated.
    - the contract version is updated both in [`Pyth.sol`](./contracts/pyth/Pyth.sol) and [`package.json`](./package.json).
@@ -96,7 +96,7 @@ This is the deployment process:
 9. If you are deploying to a new network, please add the new contract address to consumer facing libraries
    and documentations. Please update the following resources:
    - [Pyth Gitbook EVM Page](https://github.com/pyth-network/pyth-gitbook/blob/main/pythnet-price-feeds/evm.md#networks)
-   - [pyth-evm-js package](https://github.com/pyth-network/pyth-js/blob/main/pyth-evm-js/src/index.ts#L13)
+   - [pyth-evm-js package](../sdk/js/)
 10. (Optional) You can test the deployed contract by sending and fetching a price update as described in the
     [Testing](#testing) section below.
 11. (Optional) Verify the contract as described in the [Verifying the contract](#verifying-the-contract) section.
@@ -204,3 +204,12 @@ contract or a new contract do the following steps in addition to the steps descr
 5. If you wish to deploy the contract run `npx hardhat deploy-zksync --network <network> --script deploy/zkSyncDeploy` to deploy it to the new network. Otherwise
    run `npx hardhat deploy-zksync --network <network> --script deploy/zkSyncDeployNewPythImpl.ts` to get a new implementation address. Then put it in
    `.<network>.new_impl` file and run the deployment script to handle the rest of the changes.
+
+# Deploy/Upgrade on Canto
+
+Canto network rewards some percentage of the gas usage to the contracts. To enable the rewards we have modified the contract upon
+deployment to register its own address as the receiver of the rewards and also assigned Pyth to received Wormhole Receiver rewards
+too. The registration only happens once for contract. The contracts are registered with token id 654. We don't need to register
+the contracts upon upgrades because the proxy address doesn't change. The contract changes for registration are stored in
+[this diff](./canto-deployment-patch.diff) for future reference. Please note that if we switch to another Wormhole Receiver
+(a new address) we will need to register the new contract.

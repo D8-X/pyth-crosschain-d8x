@@ -16,9 +16,9 @@ import {
   ExecutePostedVaa,
   getMultisigCluster,
   getProposals,
-  getRemoteCluster,
   MultisigInstruction,
   MultisigParser,
+  PRICE_FEED_MULTISIG,
   PythMultisigInstruction,
   UnrecognizedProgram,
   WormholeMultisigInstruction,
@@ -27,7 +27,6 @@ import { ClusterContext } from '../../contexts/ClusterContext'
 import { useMultisigContext } from '../../contexts/MultisigContext'
 import { usePythContext } from '../../contexts/PythContext'
 import { StatusFilterContext } from '../../contexts/StatusFilterContext'
-import { PRICE_FEED_MULTISIG } from '../../hooks/useMultisig'
 import VerifiedIcon from '../../images/icons/verified.inline.svg'
 import VotedIcon from '../../images/icons/voted.inline.svg'
 import { capitalizeFirstLetter } from '../../utils/capitalizeFirstLetter'
@@ -581,12 +580,7 @@ const Proposal = ({
                   className="flex justify-between"
                 >
                   <div>Target Chain</div>
-                  <div>
-                    {instruction.governanceAction.targetChainId === 'pythnet' &&
-                    getRemoteCluster(cluster) === 'pythtest'
-                      ? 'pythtest'
-                      : 'pythnet'}
-                  </div>
+                  <div>{cluster}</div>
                 </div>
               </>
             ) : null}
@@ -775,9 +769,8 @@ const Proposal = ({
                 {instruction.governanceAction instanceof ExecutePostedVaa
                   ? instruction.governanceAction.instructions.map(
                       (innerInstruction, index) => {
-                        const multisigParser = MultisigParser.fromCluster(
-                          getRemoteCluster(cluster)
-                        )
+                        const multisigParser =
+                          MultisigParser.fromCluster(cluster)
                         const parsedInstruction =
                           multisigParser.parseInstruction({
                             programId: innerInstruction.programId,
@@ -1123,9 +1116,8 @@ const Proposals = ({
                 ix.name === 'postMessage' &&
                 ix.governanceAction instanceof ExecutePostedVaa &&
                 ix.governanceAction.instructions.every((remoteIx) => {
-                  const innerMultisigParser = MultisigParser.fromCluster(
-                    getRemoteCluster(cluster)
-                  )
+                  const innerMultisigParser =
+                    MultisigParser.fromCluster(cluster)
                   const parsedRemoteInstruction =
                     innerMultisigParser.parseInstruction({
                       programId: remoteIx.programId,

@@ -16,3 +16,5 @@ bigtable-writer.json
 tsconfig.tsbuildinfo
 *~
 *mnemonic*
+.envrc
+.DS_Store

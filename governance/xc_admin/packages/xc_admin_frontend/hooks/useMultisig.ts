@@ -1,5 +1,6 @@
 import { Wallet } from '@coral-xyz/anchor'
 import NodeWallet from '@coral-xyz/anchor/dist/cjs/nodewallet'
+import { getPythProgramKeyForCluster } from '@pythnetwork/client'
 import { useAnchorWallet } from '@solana/wallet-adapter-react'
 import {
   AccountMeta,
@@ -12,32 +13,21 @@ import SquadsMesh from '@sqds/mesh'
 import { MultisigAccount, TransactionAccount } from '@sqds/mesh/lib/types'
 import { useContext, useEffect, useState } from 'react'
 import {
+  ExecutePostedVaa,
   getManyProposalsInstructions,
   getMultisigCluster,
   getProposals,
   isRemoteCluster,
   MultisigInstruction,
   MultisigParser,
+  PRICE_FEED_MULTISIG,
   PythMultisigInstruction,
   UnrecognizedProgram,
+  UPGRADE_MULTISIG,
   WormholeMultisigInstruction,
 } from 'xc_admin_common'
 import { ClusterContext } from '../contexts/ClusterContext'
 import { pythClusterApiUrls } from '../utils/pythClusterApiUrl'
-
-export const UPGRADE_MULTISIG: Record<Cluster | 'localnet', PublicKey> = {
-  'mainnet-beta': new PublicKey('FVQyHcooAtThJ83XFrNnv74BcinbRH3bRmfFamAHBfuj'),
-  testnet: new PublicKey('FVQyHcooAtThJ83XFrNnv74BcinbRH3bRmfFamAHBfuj'),
-  devnet: new PublicKey('6baWtW1zTUVMSJHJQVxDUXWzqrQeYBr6mu31j3bTKwY3'),
-  localnet: new PublicKey('FVQyHcooAtThJ83XFrNnv74BcinbRH3bRmfFamAHBfuj'),
-}
-
-export const PRICE_FEED_MULTISIG: Record<Cluster | 'localnet', PublicKey> = {
-  'mainnet-beta': new PublicKey('92hQkq8kBgCUcF9yWN8URZB9RTmA4mZpDGtbiAWA74Z8'),
-  testnet: new PublicKey('92hQkq8kBgCUcF9yWN8URZB9RTmA4mZpDGtbiAWA74Z8'),
-  devnet: new PublicKey('92hQkq8kBgCUcF9yWN8URZB9RTmA4mZpDGtbiAWA74Z8'),
-  localnet: new PublicKey('92hQkq8kBgCUcF9yWN8URZB9RTmA4mZpDGtbiAWA74Z8'),
-}
 
 interface MultisigHookData {
   isLoading: boolean
@@ -91,6 +81,10 @@ export const useMultisig = (wallet: Wallet): MultisigHookData => {
   }, [urlsIndex, cluster])
 
   useEffect(() => {
+    setUrlsIndex(0)
+  }, [cluster])
+
+  useEffect(() => {
     const urls = pythClusterApiUrls(getMultisigCluster(cluster))
     const connection = new Connection(urls[urlsIndex].rpcUrl, {
       commitment: 'confirmed',
@@ -137,7 +131,6 @@ export const useMultisig = (wallet: Wallet): MultisigHookData => {
         )
         try {
           if (cancelled) return
-          // DELETE THIS TRY CATCH ONCE THIS MULTISIG EXISTS EVERYWHERE
           setpriceFeedMultisigAccount(
             await readOnlySquads.getMultisig(
               PRICE_FEED_MULTISIG[getMultisigCluster(cluster)]
@@ -157,7 +150,6 @@ export const useMultisig = (wallet: Wallet): MultisigHookData => {
         )
         try {
           if (cancelled) return
-          // DELETE THIS TRY CATCH ONCE THIS MULTISIG EXISTS EVERYWHERE
           const sortedPriceFeedMultisigProposals = await getSortedProposals(
             readOnlySquads,
             PRICE_FEED_MULTISIG[getMultisigCluster(cluster)]
@@ -186,7 +178,14 @@ export const useMultisig = (wallet: Wallet): MultisigHookData => {
             if (
               isRemoteCluster(cluster) &&
               ixs.length > 0 &&
-              ixs.some((ix) => ix instanceof WormholeMultisigInstruction)
+              ixs.some(
+                (ix) =>
+                  ix instanceof WormholeMultisigInstruction &&
+                  ix.governanceAction instanceof ExecutePostedVaa &&
+                  ix.governanceAction.instructions.some((ix) =>
+                    ix.programId.equals(getPythProgramKeyForCluster(cluster))
+                  )
+              )
             ) {
               proposalsRes.push(sortedPriceFeedMultisigProposals[idx])
               instructionsRes.push(ixs)

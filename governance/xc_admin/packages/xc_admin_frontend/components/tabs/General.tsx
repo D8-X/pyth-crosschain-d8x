@@ -10,13 +10,13 @@ import {
   getMultisigCluster,
   isRemoteCluster,
   mapKey,
+  PRICE_FEED_MULTISIG,
   proposeInstructions,
   WORMHOLE_ADDRESS,
 } from 'xc_admin_common'
 import { ClusterContext } from '../../contexts/ClusterContext'
 import { useMultisigContext } from '../../contexts/MultisigContext'
 import { usePythContext } from '../../contexts/PythContext'
-import { PRICE_FEED_MULTISIG } from '../../hooks/useMultisig'
 import { capitalizeFirstLetter } from '../../utils/capitalizeFirstLetter'
 import ClusterSwitch from '../ClusterSwitch'
 import Modal from '../common/Modal'
@@ -391,6 +391,23 @@ const General = () => {
                 .instruction()
             )
           }
+
+          if (
+            JSON.stringify(prev.priceAccounts[0].expo) !==
+            JSON.stringify(newChanges.priceAccounts[0].expo)
+          ) {
+            // create update exponent instruction
+            instructions.push(
+              await pythProgramClient.methods
+                .setExponent(newChanges.priceAccounts[0].expo, 1)
+                .accounts({
+                  fundingAccount,
+                  priceAccount: new PublicKey(prev.priceAccounts[0].address),
+                })
+                .instruction()
+            )
+          }
+
           // check if minPub has changed
           if (
             prev.priceAccounts[0].minPub !== newChanges.priceAccounts[0].minPub
